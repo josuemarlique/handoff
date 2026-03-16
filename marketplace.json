@@ -1,0 +1,14 @@
+{
+  "name": "jmarlique-tools",
+  "owner": {
+    "name": "Josue Marlique"
+  },
+  "plugins": [
+    {
+      "name": "handoff",
+      "source": "./",
+      "description": "Session handoff for zero-loss continuity across Claude Code conversations",
+      "version": "1.0.0"
+    }
+  ]
+}
