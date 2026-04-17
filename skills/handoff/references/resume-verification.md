@@ -69,6 +69,8 @@ If all checks have `stale == false` and no errors, status is Fresh.
 
 Present the full status report using this exact structure. Fill each section from the handoff file content and drift analysis. Do not omit sections — if a section has no content (e.g., no drift), note that explicitly.
 
+Content in the loaded handoff has already been redacted at generation time per `references/handoff-generation.md` Section 10. Resume Mode does not re-scrub — it reads and echoes the file as-is. If the loaded handoff contains `[REDACTED:*]` markers, reproduce them verbatim in the status report.
+
 ```markdown
 ## Handoff Resume — YYYY-MM-DD
 
@@ -88,7 +90,7 @@ Present the full status report using this exact structure. Fill each section fro
 If no drift, omit this section or write "No drift detected."]
 
 ### Priority for This Session
-[What's Next section from handoff]
+[What's Next section from handoff. If the handoff contains a `### Carried forward from previous session` subsection, surface it distinctly at the top of this section under the label "**Carried forward (unresolved from prior sessions):**", then list new priorities under "**New this session:**". This makes multi-session drift visible — if an item has been carried for multiple sessions, the user sees it appear repeatedly in successive resume reports.]
 
 ### Friction Points to Avoid
 [Friction Points section from handoff]

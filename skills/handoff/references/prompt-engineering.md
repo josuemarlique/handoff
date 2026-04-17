@@ -49,6 +49,8 @@ Default behavior. No token restrictions. Apply when `--compact` is absent.
 Added `@use-gesture/react` because the native pointer event API does not normalize touch vs. mouse deltas across browsers. This replaces the hand-rolled event listeners in `src/hooks/useDrag.ts`.
 ```
 
+**Sensitive data:** all content in Full mode passes through the redaction rules defined in `handoff-generation.md` Section 10 before being written. Full mode does not suppress or relax any redaction; matched credentials appear as `[REDACTED:<type>]` markers regardless of section.
+
 ---
 
 ## 2. Compact Mode Formatting Rules (`--compact`)
@@ -108,6 +110,8 @@ script added: scripts/generate-tokens.ts
 ```
 
 **Frontmatter:** Unchanged in both modes. It is already flat, single-line, and machine-readable. Do not compress or modify it.
+
+**Sensitive data:** Compact mode applies the same Section 10 redaction as Full mode. Redaction markers are identical (`[REDACTED:<type>]`) and are not further abbreviated in compact mode — the purpose is legibility to a future reader, not density.
 
 ---
 
