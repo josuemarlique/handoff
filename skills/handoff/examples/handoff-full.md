@@ -8,6 +8,7 @@ test_summary: "214 passing (129 core + 85 style-engine)"
 build_status: passing
 stop_reason: context-limit
 phase: "2C - Interactive Modules"
+redactions_applied: 1
 ---
 
 ## Refined Intent
@@ -69,6 +70,13 @@ In View mode, the dropdown opens on hover/click. But in edit mode, it's always e
 - **What worked:** Built `useExpandCollapse` hook that measures actual `scrollHeight` and applies it directly. Smooth animation at consistent speed regardless of content size.
 - **Severity:** Medium — two approaches tried before landing on the solution
 
+### Registry auth for @use-gesture/react install
+
+- **What happened:** Installing `@use-gesture/react@10.3.1` failed intermittently with a 401 against our private mirror. The npm auth token in `.npmrc` had expired mid-session and the error surfaced as a confusing "package not found" instead of an auth failure.
+- **What was tried:** `npm cache clean`, switching to the public registry temporarily, re-logging in with `npm login`
+- **What worked:** Regenerated the mirror token from the internal credentials portal, updated `.npmrc`. The failed install output contained a bearer header snippet (`Authorization: [REDACTED:bearer-token]`) which pointed to the expired token once we knew what to look for.
+- **Severity:** Medium — resolved once the symptom was understood, but took ~20 minutes to diagnose through the misleading error.
+
 ## Current State
 
 - **Branch:** master @ 042df07
@@ -77,6 +85,12 @@ In View mode, the dropdown opens on hover/click. But in edit mode, it's always e
 - **Uncommitted work:** None — all changes committed in 8 clean, incremental commits
 
 ## What's Next
+
+### Carried forward from previous session
+
+- **Accessibility audit pass across interactive modules** — not touched this session (deprioritized in favor of completing Phase 2C module deliveries)
+
+### New priorities
 
 Priority-ordered list for Phase 2D:
 

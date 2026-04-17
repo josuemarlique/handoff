@@ -8,6 +8,7 @@ test_summary: "214 passing (129 core + 85 style-engine)"
 build_status: passing
 stop_reason: context-limit
 phase: "2C - Interactive Modules"
+redactions_applied: 1
 ---
 
 ## Intent
@@ -44,6 +45,7 @@ Tests: +9 containment tests → 214 total passing
 
 - **Circular dep builder-ui↔module-library:** ❌ direct import, ❌ barrel re-export → ✅ `ChildRendererContext` in core as React Context intermediary
 - **Toggle animation:** ❌ CSS `max-height` (janky), ❌ CSS grid `0fr/1fr` (browser support) → ✅ `useExpandCollapse` with scrollHeight measurement
+- **Registry auth for @use-gesture/react:** ❌ npm cache clean, ❌ public registry switch → ✅ regenerated mirror token (failed install output contained `Authorization: [REDACTED:bearer-token]`)
 
 ## State
 
@@ -53,6 +55,12 @@ Tests: +9 containment tests → 214 total passing
 - Uncommitted: none
 
 ## Next
+
+### Carried forward
+
+- Accessibility audit pass across interactive modules — not touched this session
+
+### New
 
 1. Video module
 2. Audio module
