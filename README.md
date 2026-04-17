@@ -59,6 +59,9 @@ This reads the latest handoff, compares it against current git state (commit dri
 | `--no-prompt` | Off | Skip generating the continuation prompt file |
 | `--no-memory` | Off | Skip updating project memory |
 | `--no-priority` | Off | Skip the "What's Next" section |
+| `--list` | Off | List past handoffs and exit (mutually exclusive with all other flags) |
+| `--note-raw "text"` | None | Like `--note` but skips the credential redaction filter (repeatable) |
+| `--no-carryforward` | Off | Skip automatic carry-forward of unresolved priorities from the last handoff |
 
 ### Common combinations
 
@@ -100,6 +103,24 @@ This reads the latest handoff, compares it against current git state (commit dri
 **Full mode** (default): Complete sentences, narrative friction points, full reasoning paragraphs. No token restrictions.
 
 **Compact mode** (`--compact`): Same sections, same information. Terse bullets, abbreviated headers, `file:line` shorthand. Token-conscious for smaller context windows.
+
+## Sensitive Data Handling
+
+Handoffs can inadvertently capture credentials from conversation history, tool output, and test failures. The skill defends against this in four ways, applied at generation time before anything is written to disk:
+
+1. **Never quotes file contents from sensitive paths** — `.env*`, `**/secrets.*`, `**/credentials.*`, `*.pem`, `*.key`, `id_rsa*`, `.netrc`, `.aws/credentials`, `.ssh/*`, and any file in `.gitignore` matching those patterns. Variable names and file paths are allowed; values are not.
+
+2. **Redacts common credential patterns** in conversation-pulled content, friction points, decisions, and environment notes. Covered: OpenAI keys (`sk-…`), GitHub PATs (`ghp_…`, `gho_…`, etc.), Slack tokens, AWS access keys, JWTs, `Bearer` headers, `password=`/`token=`/`api_key=` assignments, DB connection string passwords (`postgres://user:pass@…`), PEM private-key blocks. Matches are replaced with `[REDACTED:<type>]`.
+
+3. **`--note` values** pass through the same redaction filter before being appended to User Notes.
+
+4. **Captured test/build output** is capped at 40 lines per command and filtered before embedding.
+
+The handoff's frontmatter records `redactions_applied: <N>` whenever one or more redactions ran — a visible signal that the scrubber caught something.
+
+**Escape hatch:** if you need to inject a note that contains a pattern match without redaction, use `--note-raw "text"`. This is consent-based — the handoff records `raw_notes_count: <N>` so the bypass is visible.
+
+Known limitations: regex-based redaction can miss novel credential formats (the file-content rule is the primary defense), and conservative patterns can produce false positives on unrelated strings. Inspect the `redactions_applied` count if in doubt.
 
 ## Output Structure
 

@@ -1,7 +1,7 @@
 {
   "name": "handoff",
   "description": "Session handoff skill for zero-loss continuity across Claude Code conversations. Generates structured context-transfer documents at session end, verifies and loads them at session start.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": {
     "name": "Josue Marlique"
   },
