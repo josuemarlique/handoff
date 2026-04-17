@@ -12,7 +12,7 @@ description: >
 
 ## Identity & Purpose
 
-This skill generates context-transfer documents at the end of a session so that a future session can resume with full situational awareness. It captures what was accomplished, what changed, what decisions were made, what friction was encountered, and what should happen next. In **Resume Mode** (`--resume`), it verifies that a previous handoff exists, loads it, and walks through a structured verification checklist to confirm the project state before continuing work. The goal is zero-loss continuity between sessions regardless of context window limits, time gaps, or focus shifts. A well-executed handoff eliminates the "cold start" problem where a new session wastes its first 10-15 minutes rediscovering context that the previous session already had.
+This skill generates context-transfer documents at the end of a session so that a future session can resume with full situational awareness. It captures what was accomplished, what changed, what decisions were made, what friction was encountered, and what should happen next. In **Resume Mode** (`--resume`), it verifies that a previous handoff exists, loads it, and walks through a structured verification checklist to confirm the project state before continuing work. The goal is zero-loss continuity between sessions regardless of context window limits, time gaps, or focus shifts. A well-executed handoff eliminates the "cold start" problem where a new session wastes its first 10-15 minutes rediscovering context that the previous session already had. The skill redacts sensitive credential patterns and refuses to quote contents of `.env`/secret files by default; see `references/handoff-generation.md` Section 10 for the full sensitive-data handling rules.
 
 ---
 
@@ -48,6 +48,9 @@ If no flags are provided at all, default to Generate Mode with reason `context-l
 | `--no-prompt` | Off | Skip generating the continuation prompt file. |
 | `--no-memory` | Off | Skip updating the project memory file (`handoff_state.md`). |
 | `--no-priority` | Off | Skip the "What's Next" section entirely. |
+| `--list` | Off | List past handoffs and exit. Mutually exclusive with all other flags. See `references/handoff-generation.md` Section 11. |
+| `--note-raw "text"` | None | Like `--note` but skips the Rule 2 redaction filter. Repeatable. Tracked via `raw_notes_count` frontmatter field. |
+| `--no-carryforward` | Off | Skip automatic carry-forward of unresolved priorities from the previous handoff's "What's Next". |
 
 ---
 
@@ -57,6 +60,9 @@ If no flags are provided at all, default to Generate Mode with reason `context-l
 
 - `--resume` combined with any of `--compact`, `--reason`, `--note`: Resume Mode reads an existing handoff; it does not generate one. These flags are generation-only. Emit a warning:
   > "The `--resume` flag enters Resume Mode, which loads and verifies an existing handoff. The flags `--compact`, `--reason`, and `--note` only apply to Generate Mode and will be ignored. Did you mean to run without `--resume`?"
+
+- `--list` combined with any other flag: `--list` is a read-only browse mode and does not combine with generation or resume flags. Emit a warning:
+  > "The `--list` flag only lists past handoffs and does not combine with generation or resume flags. Re-run with `--list` alone."
 
 **Legal but confirm intent:**
 

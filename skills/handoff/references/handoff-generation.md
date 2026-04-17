@@ -112,6 +112,25 @@ Problems encountered, failed approaches, workarounds. Use the entry format from 
 
 Priority-ordered list derived from specs/plans/roadmap context plus conversation signals. Behavior varies by `--reason` flag (see Section 7). Each item should be actionable — specific enough that the next session knows where to start without re-reading everything.
 
+**Carry-forward from the previous handoff:** if `.claude/handoffs/LATEST.md` exists and contains a parseable `## What's Next` section, evaluate each previous priority against this session's signals (commit messages since the previous `last_commit`, paths in `git diff --name-only`, conversation topics). An item is considered **addressed** when two or more signal categories match, OR when the model is confident from the conversation that the item was completed or explicitly abandoned. Everything else is **unaddressed** and carried forward. Bias: on ambiguity, carry forward.
+
+When at least one item is carried forward, structure the `What's Next` section as two subsections:
+
+    ### Carried forward from previous session
+
+    - [item text, verbatim from prior handoff] — not touched this session
+    - [item text, verbatim] — partially addressed: [one-line note]
+    - [item text, verbatim] — blocked: [one-line reason, if detected]
+
+    ### New priorities
+
+    1. [New priority #1]
+    2. [New priority #2]
+
+When nothing is carried forward, use the original single-list format (no subsection headings).
+
+Suppressed by `--no-carryforward`. Also suppressed when `--no-priority` is set (there's no What's Next section to attach to).
+
 **`## Environment Notes`**
 
 - Dependencies installed during the session
@@ -239,7 +258,11 @@ Before gathering any context, pause and present up to 3 questions from the pool 
 
 ### `--note "text"`
 
-Each `--note` value is appended as a bullet in the User Notes section. Multiple `--note` flags produce multiple bullets. Notes are appended verbatim, not paraphrased.
+Each `--note` value is appended as a bullet in the User Notes section. Multiple `--note` flags produce multiple bullets. Notes are appended after passing through the Rule 2 redaction filter defined in Section 10. If you need to bypass redaction for a specific note, use `--note-raw` instead.
+
+### `--note-raw "text"`
+
+Identical to `--note` but skips the Rule 2 redaction filter defined in Section 10. The text is appended to User Notes verbatim with no scrubbing. Intended as a consent-based escape hatch when the user needs to inject content they know contains a pattern match but do not want redacted. Each occurrence increments the frontmatter `raw_notes_count` counter.
 
 ### `--no-prompt`
 
@@ -252,6 +275,10 @@ Skip the Memory Update Procedure (Section 5) entirely. Still write all handoff a
 ### `--no-priority`
 
 Omit the "What's Next" section from the handoff document body. Do not include a placeholder — remove the section heading entirely. The continuation prompt should still reference "next priority" as "(see handoff for context)" if `--no-priority` was used.
+
+### `--no-carryforward`
+
+Suppresses the carry-forward logic described in Section 2. The new `What's Next` section is generated using only this session's signals, ignoring any unresolved items from `LATEST.md`. Use when the user has pivoted focus or is explicitly closing out stale priorities.
 
 ---
 
@@ -299,3 +326,121 @@ This is a distinct final step, separate from the Memory Update Procedure in Sect
 5. If already found, leave MEMORY.md unchanged
 
 Do not modify any other entries in MEMORY.md. Only append the missing line.
+
+---
+
+## 10. Sensitive Data Handling
+
+This skill MUST NOT leak credentials into generated handoffs. Apply these four rules during generation, before any file is written. Every rule applies in both Full and Compact modes identically.
+
+### 10.1 Rule 1 — Never quote file contents from sensitive paths
+
+Do not read-and-embed contents from files matching any of these patterns:
+
+| Category | Patterns |
+|---|---|
+| Env files | `.env`, `.env.*`, `*.env` (in any directory) |
+| Secrets | `**/secrets.*`, `**/credentials.*`, `**/*-secrets.*` |
+| Keys | `*.pem`, `*.key`, `id_rsa*`, `id_ed25519*`, `*.p12`, `*.pfx` |
+| Tool credential stores | `.netrc`, `.aws/credentials`, `.ssh/config`, `.ssh/id_*` |
+
+Also treat as sensitive: any file in `.gitignore` whose path matches one of the categories above. Gitignored files in other categories (build artifacts, caches, `node_modules`) remain referenceable by path — the `.gitignore` check is only used to catch project-specific secret conventions.
+
+**Allowed:** variable names and filenames. Example: "added `OPENAI_API_KEY` entry to `.env`" is fine. Embedding the value is not.
+
+### 10.2 Rule 2 — Redact credential patterns in pulled content
+
+Any text synthesized from the conversation window, tool output, or read non-sensitive files MUST pass through this pattern filter before landing in the output. Matches are replaced with `[REDACTED:<type>]`. For `assignment-secret` and `db-url-credential`, replace only the value portion and preserve the key name or URL scheme.
+
+| Type | Pattern |
+|---|---|
+| `openai-key` | `sk-[A-Za-z0-9_-]{20,}` |
+| `github-pat` | `gh[puso]_[A-Za-z0-9]{36,}` |
+| `slack-token` | `xox[bpa]-[A-Za-z0-9-]+` |
+| `aws-access-key` | `(AKIA\|ASIA)[0-9A-Z]{16}` |
+| `jwt` | `eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+` |
+| `bearer-token` | `Bearer\s+[A-Za-z0-9._~+/=-]{20,}` |
+| `assignment-secret` | `(?i)\b(password\|passwd\|pwd\|token\|secret\|api[_-]?key\|auth[_-]?token\|access[_-]?token)\b\s*[:=]\s*["']?([^\s"'<>]{8,})` |
+| `db-url-credential` | `\b(postgres\|postgresql\|mysql\|mongodb\|mongodb\+srv\|redis\|rediss\|amqp\|amqps)://([^:@\s/]+):([^@\s/]+)@` |
+| `private-key-header` | `-----BEGIN (RSA \|EC \|DSA \|OPENSSH \|PGP )?PRIVATE KEY-----` (if matched, drop the entire block through the matching END line and replace with `[REDACTED:private-key]`) |
+
+Maintain a running count of redactions applied. Write the total to the YAML frontmatter as `redactions_applied: <N>`. Emit this field only when N > 0.
+
+### 10.3 Rule 3 — `--note` values pass through Rule 2
+
+Each `--note "<text>"` value is appended verbatim to User Notes **after** passing through the Rule 2 filter. This replaces the original "appended verbatim, not paraphrased" rule in Section 7.
+
+**Escape hatch — `--note-raw "<text>"`:** skips Rule 2 for that single note. The user explicitly asks for no scrubbing. When any `--note-raw` is used, write `raw_notes_count: <N>` to the frontmatter so the bypass is visible. Emit this field only when N > 0.
+
+### 10.4 Rule 4 — Test/build output is capped and filtered
+
+Before embedding captured test or build output into the Current State section or the `test_summary` frontmatter field:
+
+1. Cap the output at 40 lines per command. If the original exceeded 40 lines, keep the first 20 and last 20 joined by a `... <N> lines elided ...` marker.
+2. Pass the capped output through the Rule 2 filter.
+
+### 10.5 Failure mode
+
+If the redaction filter errors on a specific field (regex engine failure, malformed input, unicode issue), drop that field's content and replace with the marker `[content dropped: redaction error]`. Do not pass the original content through. Do not abort generation for other fields — the rest of the handoff should still be produced.
+
+### 10.6 Frontmatter additions
+
+Two new optional fields:
+
+```yaml
+redactions_applied: 3   # omit when 0
+raw_notes_count: 1      # omit when 0
+```
+
+Existing frontmatter fields are unchanged. The `freshness-check.sh` script ignores unknown fields, so older handoffs without these fields remain compatible with Resume Mode.
+
+---
+
+## 11. `--list` Mode
+
+When the `--list` flag is passed, skip generation entirely. This mode is a read-only browse of past handoffs.
+
+### 11.1 Procedure
+
+1. List files in `.claude/handoffs/` matching the glob `*-handoff.md`. Exclude `LATEST.md`, `LATEST-PROMPT.md`, and any `*-prompt.md` files.
+2. For each file, parse the YAML frontmatter.
+3. Sort by the `created` field, descending (newest first).
+4. Print the output described in Section 11.2.
+
+### 11.2 Output format
+
+```
+Handoffs in .claude/handoffs/ (N total)
+
+2026-04-17 14:22  main         @ a3b2c1d  phase-complete    "Wrapped Phase 2D media modules"
+2026-04-10 09:15  feature/x    @ 7f3d21e  context-limit     "Started slider swipe work"
+2026-04-08 17:40  feature/x    @ 22aa91f  done-for-day      "Bug triage, no commits"
+```
+
+Columns:
+
+| # | Field | Source | Format |
+|---|---|---|---|
+| 1 | Timestamp | frontmatter `created` | `YYYY-MM-DD HH:MM` |
+| 2 | Branch | frontmatter `branch` | left-padded to at least 10 chars |
+| 3 | Commit | frontmatter `last_commit` | `@ <short-hash>` |
+| 4 | Reason | frontmatter `stop_reason` | left-padded for column alignment (computed from the longest value in the current set) |
+| 5 | Summary | first sentence of `## Refined Intent` (or `## Intent` in compact) | truncated to 60 chars with ellipsis if longer |
+
+If the summary cannot be extracted (malformed file, missing section), fall back to the filename.
+
+### 11.3 Flag validation
+
+`--list` is mutually exclusive with every other flag. If combined with any of `--resume`, `--compact`, `--reason`, `--interactive`, `--note`, `--note-raw`, `--no-prompt`, `--no-memory`, `--no-priority`, `--no-carryforward`, emit:
+
+> "The `--list` flag only lists past handoffs and does not combine with generation or resume flags. Re-run with `--list` alone."
+
+Then stop. Do not proceed.
+
+### 11.4 Edge cases
+
+| Case | Behavior |
+|---|---|
+| `.claude/handoffs/` does not exist | Print "No handoffs found — directory does not exist." and exit cleanly. |
+| Directory exists but no matching files | Print "No handoffs found in `.claude/handoffs/`." and exit cleanly. |
+| One or more files have unparseable frontmatter | Skip those files in the list. After the list, append "Skipped N file(s) with unparseable frontmatter: [paths]." |
