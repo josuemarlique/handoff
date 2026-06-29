@@ -7,8 +7,8 @@
     {
       "name": "handoff",
       "source": "./",
-      "description": "Session handoff for zero-loss continuity across Claude Code conversations",
-      "version": "1.1.0"
+      "description": "Session handoff for zero-loss continuity across coding agent conversations",
+      "version": "1.2.0"
     }
   ]
 }

@@ -1,6 +1,6 @@
-# claude-handoff
+# handoff
 
-Session handoff skill for zero-loss continuity across Claude Code conversations.
+Session handoff skill for zero-loss continuity across Claude Code and Codex conversations.
 
 Generate structured context-transfer documents at the end of a session, then verify and resume from them at the start of the next. No more cold starts.
 
@@ -16,15 +16,38 @@ When you hit a context limit or wrap up for the day, `/handoff` captures everyth
 
 When you start a new session, `/handoff --resume` loads the latest handoff, runs freshness checks against git state, and tells you exactly where to pick up.
 
-## Installation
+## Claude Code Installation
 
 ```bash
 # Add the marketplace
-/plugin marketplace add josuemarlique/claude-handoff
+/plugin marketplace add josuemarlique/handoff
 
 # Install the plugin
 /plugin install handoff@jmarlique-tools
 ```
+
+## Codex Installation
+
+This repository also includes a Codex plugin manifest at `.codex-plugin/plugin.json`.
+
+```bash
+# Add the marketplace from this GitHub repository
+codex plugin marketplace add josuemarlique/handoff
+
+# Install the plugin
+codex plugin add handoff@jmarlique-tools
+```
+
+For local development from a checkout:
+
+```bash
+codex plugin marketplace add /path/to/handoff
+codex plugin add handoff@jmarlique-tools
+```
+
+After changing the plugin locally, reinstall it and start a new Codex thread so updated skills are loaded.
+
+Handoff uses the project-local `.handoffs/` directory for both Claude Code and Codex. On first use after upgrading, it copies any legacy `.claude/handoffs/` history into `.handoffs/`, leaves the old folder in place as an archive, and tells you when it is safe to delete the old folder. Host project memory is written to the matching global memory root: `~/.claude/projects/.../memory/` for Claude Code and `~/.Codex/projects/.../memory/` for Codex.
 
 ## Quick Start
 
@@ -34,7 +57,7 @@ When you start a new session, `/handoff --resume` loads the latest handoff, runs
 /handoff
 ```
 
-This generates a timestamped handoff document and a continuation prompt in `.claude/handoffs/`.
+This generates a timestamped handoff document and a continuation prompt in `.handoffs/`.
 
 ### Start of next session — resume
 
@@ -88,7 +111,7 @@ This reads the latest handoff, compares it against current git state (commit dri
 
 ### Resume Mode (`--resume`)
 
-1. **Reads latest handoff** from `.claude/handoffs/LATEST.md`
+1. **Reads latest handoff** from `.handoffs/LATEST.md`
 2. **Runs freshness checks** via a POSIX shell script that compares the handoff's frontmatter against current git state:
    - Commit drift (new commits since handoff)
    - Branch drift (different branch than handoff)
@@ -125,7 +148,7 @@ Known limitations: regex-based redaction can miss novel credential formats (the 
 ## Output Structure
 
 ```
-.claude/handoffs/
+.handoffs/
 ├── LATEST.md                    # Always points to most recent handoff
 ├── LATEST-PROMPT.md             # Always points to most recent prompt
 ├── 2026-03-14-02-30-handoff.md  # Timestamped handoff (permanent)
@@ -150,7 +173,7 @@ See [examples/](skills/handoff/examples/) for full and compact format samples.
 
 ## Requirements
 
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) or Codex CLI
 - Git (for freshness checks and context gathering)
 
 ## License

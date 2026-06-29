@@ -23,7 +23,7 @@ Determine the operating mode from the user's invocation. The two modes are mutua
 1. **If the arguments contain `--resume`** --> **Resume Mode**
    - Load and follow `references/resume-verification.md`
    - Do NOT load generation or sentiment references.
-   - The skill will locate the latest handoff (preferring `LATEST.md` in `.claude/handoffs/`), read it, and then systematically verify each section against the current project state (git log, file system, test results). Any drift between the handoff and reality is flagged before work begins.
+   - The skill will run the migration preflight, locate the latest handoff at `LATEST.md` in `.handoffs/`, read it, and then systematically verify each section against the current project state (git log, file system, test results). Any drift between the handoff and reality is flagged before work begins.
 
 2. **Otherwise** --> **Generate Mode**
    - Load and follow `references/handoff-generation.md`
@@ -51,6 +51,43 @@ If no flags are provided at all, default to Generate Mode with reason `context-l
 | `--list` | Off | List past handoffs and exit. Mutually exclusive with all other flags. See `references/handoff-generation.md` Section 11. |
 | `--note-raw "text"` | None | Like `--note` but skips the Rule 2 redaction filter. Repeatable. Tracked via `raw_notes_count` frontmatter field. |
 | `--no-carryforward` | Off | Skip automatic carry-forward of unresolved priorities from the previous handoff's "What's Next". |
+
+---
+
+## Host Compatibility
+
+This skill is usable from Claude Code and Codex. Keep project handoff artifacts in `.handoffs/` for cross-agent continuity.
+
+Project memory is host-specific:
+
+- Claude Code: update `~/.claude/projects/{project-path}/memory/`
+- Codex: update `~/.Codex/projects/{project-path}/memory/`
+- Other hosts: skip global memory updates unless the user explicitly provides a target
+
+The handoff document, `LATEST.md`, continuation prompt, and resume verification always use the shared project-local `.handoffs/` path. The legacy `.claude/handoffs/` path is copied into `.handoffs/` during migration and then left in place as an archive.
+
+---
+
+## Migration Preflight
+
+Run this preflight once at the start of every invocation, before Generate Mode, Resume Mode, or `--list` handling:
+
+1. Locate `scripts/migrate-handoffs.sh` relative to this skill's directory.
+2. Run it from the current project root.
+3. If the script prints a migration notice, reproduce that notice to the user before continuing.
+
+The migration script copies `.claude/handoffs/` into `.handoffs/` only when `.handoffs/` does not already exist. It never deletes `.claude/handoffs/`. Tell the user that `.claude/handoffs/` was left in place as an archive and that they can delete `.claude/handoffs/` after confirming `.handoffs/` contains their history.
+
+If the script is unavailable, perform the same fallback manually:
+
+```bash
+if [ ! -d .handoffs ] && [ -d .claude/handoffs ]; then
+  mkdir -p .handoffs
+  cp -pR .claude/handoffs/. .handoffs/
+fi
+```
+
+Then print the same archive/delete notice.
 
 ---
 
@@ -113,7 +150,7 @@ Incorporate answers into the "User Notes" section of the handoff and let them in
 All handoff artifacts are written to the project root under:
 
 ```
-.claude/handoffs/
+.handoffs/
 ```
 
 Auto-create the directory on first use if it does not exist. Use `mkdir -p` to handle nested creation safely.
@@ -144,23 +181,23 @@ Use the system clock for timestamps. Format: `YYYY-MM-DD-HH-MM` in local time (2
 
 ## Memory Integration
 
-Unless `--no-memory` is set, update persistent project memory after generating the handoff:
+Unless `--no-memory` is set, update persistent project memory after generating the handoff. Use the current host's memory root: `~/.claude` for Claude Code, `~/.Codex` for Codex. If the host is neither Claude Code nor Codex, skip global memory updates unless the user explicitly provides a target.
 
-1. **Write or update** `~/.claude/projects/{project-path}/memory/handoff_state.md` with a concise summary:
+1. **Write or update** `<memory-root>/projects/{project-path}/memory/handoff_state.md` with a concise summary:
    - Current phase/milestone
    - Key progress made this session
    - Top 3 next priorities
    - Active blockers (if any)
    - Path to the latest handoff file
 
-2. **Check the MEMORY.md index** at `~/.claude/projects/{project-path}/memory/MEMORY.md`:
+2. **Check the MEMORY.md index** at `<memory-root>/projects/{project-path}/memory/MEMORY.md`:
    - If an entry for `handoff_state.md` already exists, leave it.
    - If no entry exists, append:
      ```
      - [handoff_state.md](handoff_state.md) — Latest session handoff state — phase, progress, next priorities
      ```
 
-The `{project-path}` is derived from the current working directory, matching the convention used by Claude's project memory system (typically the absolute path with slashes replaced by dashes, e.g., `-home-jmarlique-Projects-MyApp`).
+The `{project-path}` is derived from the current working directory, matching the convention used by the host's project memory system (typically the absolute path with slashes replaced by dashes, e.g., `-home-jmarlique-Projects-MyApp`).
 
 ---
 
@@ -170,7 +207,7 @@ This skill intentionally does not handle:
 
 - **Cross-project handoffs** -- each handoff is scoped to the current project.
 - **Auto-triggering** -- the user must invoke the skill manually.
-- **Handoff cleanup or rotation** -- old files in `.claude/handoffs/` accumulate. Manual cleanup is expected.
+- **Handoff cleanup or rotation** -- old files in `.handoffs/` accumulate. Manual cleanup is expected.
 - **Multi-user or team workflows** -- handoffs are single-user, single-session continuity documents.
 - **External integrations** -- no Slack, Linear, GitHub Issues, or other platform integrations.
 

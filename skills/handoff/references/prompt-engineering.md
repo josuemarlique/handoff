@@ -121,7 +121,7 @@ Use this template when generating the continuation prompt in full (default) mode
 
 ```
 You are continuing a previous session. Read the handoff document at
-.claude/handoffs/LATEST.md for full context, then run /handoff --resume
+.handoffs/LATEST.md for full context, then run /handoff --resume
 to verify freshness before proceeding.
 
 Key context:
@@ -143,7 +143,7 @@ environment notes, see the handoff document.
 Use this template when `--compact` is set.
 
 ```
-Continue from .claude/handoffs/LATEST.md — run /handoff --resume first.
+Continue from .handoffs/LATEST.md — run /handoff --resume first.
 Project: [name] | Branch: [branch] | Phase: [phase]
 Last: [one-line summary] | Next: [one-line priority]
 Avoid: [one-line top friction point]

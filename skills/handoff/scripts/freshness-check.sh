@@ -290,7 +290,7 @@ if [ -n "$FM_CREATED" ]; then
   _reffile=$(create_reference_file "$FM_CREATED")
 
   _spec_files=""
-  for _dir in docs .claude; do
+  for _dir in docs .handoffs .claude .Codex .codex; do
     if [ -d "$_dir" ]; then
       _found=$(find "$_dir" -type f -newer "$_reffile" 2>/dev/null || true)
       if [ -n "$_found" ]; then

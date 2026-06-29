@@ -31,8 +31,12 @@ Once discovered, run test and build commands and capture full output. Run them i
 
 Also read in parallel:
 - `docs/**` for specs, plans, roadmaps
+- `.handoffs/LATEST.md` for previous handoff context when present
 - `.claude/features/*/prd.md`, `.claude/features/*/architecture.md` for feature context
-- `.claude/projects/*/memory/MEMORY.md` for phase and status context
+- `.Codex/features/**/*.md`, `.codex/features/**/*.md` for Codex feature context
+- Host-specific project memory for phase and status context:
+  - Claude Code: `~/.claude/projects/{project-path}/memory/MEMORY.md`
+  - Codex: `~/.Codex/projects/{project-path}/memory/MEMORY.md`
 
 ### LLM-Generated (from conversation context window)
 
@@ -112,7 +116,7 @@ Problems encountered, failed approaches, workarounds. Use the entry format from 
 
 Priority-ordered list derived from specs/plans/roadmap context plus conversation signals. Behavior varies by `--reason` flag (see Section 7). Each item should be actionable — specific enough that the next session knows where to start without re-reading everything.
 
-**Carry-forward from the previous handoff:** if `.claude/handoffs/LATEST.md` exists and contains a parseable `## What's Next` section, evaluate each previous priority against this session's signals (commit messages since the previous `last_commit`, paths in `git diff --name-only`, conversation topics). An item is considered **addressed** when two or more signal categories match, OR when the model is confident from the conversation that the item was completed or explicitly abandoned. Everything else is **unaddressed** and carried forward. Bias: on ambiguity, carry forward.
+**Carry-forward from the previous handoff:** after Migration Preflight, if `.handoffs/LATEST.md` exists and contains a parseable `## What's Next` section, evaluate each previous priority against this session's signals (commit messages since the previous `last_commit`, paths in `git diff --name-only`, conversation topics). An item is considered **addressed** when two or more signal categories match, OR when the model is confident from the conversation that the item was completed or explicitly abandoned. Everything else is **unaddressed** and carried forward. Bias: on ambiguity, carry forward.
 
 When at least one item is carried forward, structure the `What's Next` section as two subsections:
 
@@ -150,7 +154,7 @@ Custom context from `--note` flags or `--interactive` mode answers. Only include
 
 ```
 You are continuing a previous session. Read the handoff document at
-.claude/handoffs/LATEST.md for full context, then run /handoff --resume
+.handoffs/LATEST.md for full context, then run /handoff --resume
 to verify freshness before proceeding.
 
 Key context:
@@ -168,7 +172,7 @@ environment notes, see the handoff document.
 ### Compact Mode
 
 ```
-Continue from .claude/handoffs/LATEST.md — run /handoff --resume first.
+Continue from .handoffs/LATEST.md — run /handoff --resume first.
 Project: [name] | Branch: [branch] | Phase: [phase]
 Last: [one-line summary] | Next: [one-line priority]
 Avoid: [one-line top friction point]
@@ -181,19 +185,23 @@ Avoid: [one-line top friction point]
 Execute these steps in order:
 
 1. Generate a timestamp: `date +%Y-%m-%d-%H-%M`
-2. Create the handoffs directory if it does not exist: `mkdir -p .claude/handoffs`
-3. Write the handoff document to `.claude/handoffs/{timestamp}-handoff.md`
-4. Copy the same content to `.claude/handoffs/LATEST.md` (full copy, not a symlink)
-5. If `--no-prompt` was not passed: write the continuation prompt to `.claude/handoffs/{timestamp}-prompt.md`
-6. If `--no-prompt` was not passed: copy the continuation prompt to `.claude/handoffs/LATEST-PROMPT.md`
+2. Create the handoffs directory if it does not exist: `mkdir -p .handoffs`
+3. Write the handoff document to `.handoffs/{timestamp}-handoff.md`
+4. Copy the same content to `.handoffs/LATEST.md` (full copy, not a symlink)
+5. If `--no-prompt` was not passed: write the continuation prompt to `.handoffs/{timestamp}-prompt.md`
+6. If `--no-prompt` was not passed: copy the continuation prompt to `.handoffs/LATEST-PROMPT.md`
 
 ---
 
 ## 5. Memory Update Procedure
 
-Skip this entire procedure if `--no-memory` was passed.
+Skip this entire procedure if `--no-memory` was passed. Otherwise, determine the host memory root:
 
-**Target path:** `~/.claude/projects/{project-path}/memory/handoff_state.md`
+- Claude Code: `~/.claude`
+- Codex: `~/.Codex`
+- Other hosts: skip unless the user explicitly provides a memory target
+
+**Target path:** `<memory-root>/projects/{project-path}/memory/handoff_state.md`
 
 Where `{project-path}` is the project directory path with `/` replaced by `-` (e.g., `/home/user/Projects/MyApp` becomes `-home-user-Projects-MyApp`).
 
@@ -217,7 +225,7 @@ type: project
 
 **Top friction to avoid:** [Top friction point with solution]
 
-**Handoff file:** .claude/handoffs/YYYY-MM-DD-HH-MM-handoff.md
+**Handoff file:** .handoffs/YYYY-MM-DD-HH-MM-handoff.md
 ```
 
 ---
@@ -270,7 +278,7 @@ Skip steps 5 and 6 of the File Writing Procedure. Do not generate or write any p
 
 ### `--no-memory`
 
-Skip the Memory Update Procedure (Section 5) entirely. Still write all handoff and prompt files. Still perform the MEMORY.md index update (Section 9).
+Skip the Memory Update Procedure (Section 5) and MEMORY.md Index Update (Section 9) entirely. Still write all handoff and prompt files.
 
 ### `--no-priority`
 
@@ -296,9 +304,13 @@ Skip test and build execution. In the Current State section, note "Test command 
 
 Still generate a complete handoff. Even brief sessions may contain a meaningful decision or a friction point worth preserving. Do not skip sections — use "None" or "N/A" only if a section genuinely has no content.
 
-**`.claude/handoffs/` directory does not exist**
+**`.handoffs/` directory does not exist**
 
 Create it automatically in step 2 of the File Writing Procedure. Do not prompt the user or ask for confirmation.
+
+**Legacy `.claude/handoffs/` exists but `.handoffs/` does not**
+
+Run Migration Preflight before reading or writing handoff files. Copy legacy history into `.handoffs/`, leave `.claude/handoffs/` in place as an archive, and notify the user that they can delete `.claude/handoffs/` after confirming the migration.
 
 **No `docs/` or spec files found**
 
@@ -306,15 +318,19 @@ The "What's Next" section relies on conversation context and memory only. Add a 
 
 **LATEST.md already exists from a prior session**
 
-Read the `last_commit` field from its frontmatter to scope `git log` to commits since that hash. This avoids re-summarizing history that was already captured.
+Read the `last_commit` field from `.handoffs/LATEST.md` frontmatter to scope `git log` to commits since that hash. This avoids re-summarizing history that was already captured.
 
 ---
 
 ## 9. MEMORY.md Index Update
 
-This is a distinct final step, separate from the Memory Update Procedure in Section 5. Perform it regardless of `--no-memory`.
+This is a distinct final step, separate from the Memory Update Procedure in Section 5. Skip this step when `--no-memory` was passed. Otherwise, perform it for the current host memory root:
 
-1. Determine the project memory path: `~/.claude/projects/{project-path}/memory/MEMORY.md`
+- Claude Code: `~/.claude`
+- Codex: `~/.Codex`
+- Other hosts: skip unless the user explicitly provides a memory target
+
+1. Determine the project memory path: `<memory-root>/projects/{project-path}/memory/MEMORY.md`
 2. Read the file
 3. Search for the string `handoff_state.md` in the file contents
 4. If not found, append this line to the file:
@@ -402,15 +418,16 @@ When the `--list` flag is passed, skip generation entirely. This mode is a read-
 
 ### 11.1 Procedure
 
-1. List files in `.claude/handoffs/` matching the glob `*-handoff.md`. Exclude `LATEST.md`, `LATEST-PROMPT.md`, and any `*-prompt.md` files.
-2. For each file, parse the YAML frontmatter.
-3. Sort by the `created` field, descending (newest first).
-4. Print the output described in Section 11.2.
+1. Run Migration Preflight.
+2. List files in `.handoffs/` matching the glob `*-handoff.md`. Exclude `LATEST.md`, `LATEST-PROMPT.md`, and any `*-prompt.md` files.
+3. For each file, parse the YAML frontmatter.
+4. Sort by the `created` field, descending (newest first).
+5. Print the output described in Section 11.2.
 
 ### 11.2 Output format
 
 ```
-Handoffs in .claude/handoffs/ (N total)
+Handoffs in .handoffs/ (N total)
 
 2026-04-17 14:22  main         @ a3b2c1d  phase-complete    "Wrapped Phase 2D media modules"
 2026-04-10 09:15  feature/x    @ 7f3d21e  context-limit     "Started slider swipe work"
@@ -441,6 +458,6 @@ Then stop. Do not proceed.
 
 | Case | Behavior |
 |---|---|
-| `.claude/handoffs/` does not exist | Print "No handoffs found — directory does not exist." and exit cleanly. |
-| Directory exists but no matching files | Print "No handoffs found in `.claude/handoffs/`." and exit cleanly. |
+| `.handoffs/` does not exist | Print "No handoffs found — directory does not exist." and exit cleanly. |
+| Directory exists but no matching files | Print "No handoffs found in `.handoffs/`." and exit cleanly. |
 | One or more files have unparseable frontmatter | Skip those files in the list. After the list, append "Skipped N file(s) with unparseable frontmatter: [paths]." |

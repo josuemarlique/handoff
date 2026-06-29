@@ -1,0 +1,39 @@
+{
+  "name": "handoff",
+  "version": "1.2.0",
+  "description": "Session handoff skill for zero-loss continuity across coding agent conversations. Generates structured context-transfer documents at session end, verifies and loads them at session start.",
+  "author": {
+    "name": "Josue Marlique",
+    "url": "https://github.com/josuemarlique"
+  },
+  "homepage": "https://github.com/josuemarlique/handoff",
+  "repository": "https://github.com/josuemarlique/handoff",
+  "license": "MIT",
+  "keywords": [
+    "handoff",
+    "session",
+    "continuity",
+    "context-transfer",
+    "workflow"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Handoff",
+    "shortDescription": "Generate and resume structured session handoffs",
+    "longDescription": "Use Handoff to capture session context, decisions, drift-sensitive project state, friction points, and next priorities so a future agent session can resume without rediscovering the work.",
+    "developerName": "Josue Marlique",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Create a handoff for this session.",
+      "Resume from the last handoff."
+    ],
+    "websiteURL": "https://github.com/josuemarlique/handoff",
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

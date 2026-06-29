@@ -1,12 +1,12 @@
 # Resume Verification Reference
 
-This is the procedure Claude follows when invoked in resume mode (`--resume`). It loads the previous session's handoff, checks for drift since the handoff was created, and presents a structured status report before continuing work.
+This is the procedure the host agent follows when invoked in resume mode (`--resume`). It loads the previous session's handoff, checks for drift since the handoff was created, and presents a structured status report before continuing work.
 
 ---
 
 ## 1. Locate Handoff
 
-Read `.claude/handoffs/LATEST.md` in the **current working directory**. This path is always relative to cwd — handoffs do not cross project boundaries, and project memory does not override this scope.
+Run Migration Preflight, then read `.handoffs/LATEST.md` in the **current working directory**. This path is always relative to cwd — handoffs do not cross project boundaries, and project memory does not override this scope.
 
 If the file is not found, display the following and stop:
 
@@ -25,7 +25,7 @@ Execute the freshness check script against the located handoff file. The script 
 # When installed as a standalone skill: ~/.claude/skills/handoff/scripts/freshness-check.sh
 # When installed as a plugin: the plugin's cache directory under skills/handoff/scripts/
 # Resolve the path dynamically from the skill directory, then run:
-<skill-dir>/scripts/freshness-check.sh .claude/handoffs/LATEST.md
+<skill-dir>/scripts/freshness-check.sh .handoffs/LATEST.md
 ```
 
 The script outputs a JSON object with one key per check. Each check contains at minimum a `stale` boolean. Some checks include additional fields (file lists, commit summaries, counts) when stale.
@@ -75,6 +75,9 @@ Content in the loaded handoff has already been redacted at generation time per `
 ## Handoff Resume — YYYY-MM-DD
 
 **Handoff from:** [created timestamp from frontmatter]
+**Mode:** resume
+**Context size:** [host-reported context size, or "not available from host"]
+**Limits:** [host-reported limits, or "not available from host"]
 **Status:** ✅ Fresh (no drift detected)
   — or —
 **Status:** ⚠️ Drift detected ([summary of what drifted])
@@ -102,9 +105,13 @@ The date in the heading is today's date (the resume date), not the handoff creat
 
 ## 5. Memory Update
 
-After presenting the status report, update the project memory file:
+After presenting the status report, update the host project memory file unless the user has disabled memory updates. Use the current host's memory root:
 
-**Path:** `~/.claude/projects/{project-path}/memory/handoff_state.md`
+- Claude Code: `~/.claude`
+- Codex: `~/.Codex`
+- Other hosts: skip unless the user explicitly provides a memory target
+
+**Path:** `<memory-root>/projects/{project-path}/memory/handoff_state.md`
 
 The `{project-path}` segment mirrors the current working directory path with slashes replaced by hyphens (e.g., `/home/user/Projects/MyApp` becomes `-home-user-Projects-MyApp`).
 
@@ -131,7 +138,7 @@ Extract the first item from the "What's Next" section of the handoff and name it
 ## 7. Edge Cases to Handle
 
 **No previous handoff**
-The file `.claude/handoffs/LATEST.md` does not exist. Inform the user and stop. Do not attempt recovery or inference. (See Section 1.)
+After Migration Preflight, the file `.handoffs/LATEST.md` does not exist. Inform the user and stop. Do not attempt recovery or inference. (See Section 1.)
 
 **Handoff file manually edited**
 Attempt to detect by comparing the file's modification time against the `created` timestamp in the frontmatter. If mtime is meaningfully later than `created`, note: "This handoff file appears to have been modified since it was generated."
@@ -139,7 +146,7 @@ Attempt to detect by comparing the file's modification time against the `created
 Known limitation: some editors and tools preserve mtime on save, while others change it without content changes. This check is not guaranteed to catch all edits and may produce false positives or false negatives. Treat it as a best-effort signal, not a definitive flag.
 
 **Resume in a different project**
-Scoping is always the current working directory's `.claude/handoffs/LATEST.md`. If the user runs `--resume` in a project that has no handoff, they get the "No previous handoff found" message — not a handoff from a different project. Handoffs never cross project boundaries.
+Scoping is always the current working directory's `.handoffs/LATEST.md`. If the user runs `--resume` in a project that has no handoff, they get the "No previous handoff found" message — not a handoff from a different project. Handoffs never cross project boundaries.
 
 ---
 
@@ -148,7 +155,7 @@ Scoping is always the current working directory's `.claude/handoffs/LATEST.md`. 
 Use this procedure if `freshness-check.sh` is missing, not executable, or exits with an error. Perform each check manually using git and filesystem commands, then produce the same status report format from Section 4.
 
 **Step 1 — Parse frontmatter**
-Read `.claude/handoffs/LATEST.md` and extract these fields from the YAML frontmatter block:
+Read `.handoffs/LATEST.md` and extract these fields from the YAML frontmatter block:
 - `created`
 - `branch`
 - `last_commit`
@@ -174,16 +181,16 @@ Compare against the `uncommitted_changes` list from frontmatter. New untracked o
 
 **Step 5 — Spec and plan changes**
 ```bash
-find docs/ .claude/ -newer .claude/handoffs/LATEST.md -type f 2>/dev/null
+find docs/ .handoffs/ .claude/ .Codex/ .codex/ -newer .handoffs/LATEST.md -type f 2>/dev/null
 ```
 Any files returned were modified after the handoff was created. List them as spec drift.
 
 **Step 6 — Dependency changes**
 ```bash
-find . -maxdepth 1 -name "package.json" -newer .claude/handoffs/LATEST.md
-find . -maxdepth 1 -name "package-lock.json" -newer .claude/handoffs/LATEST.md
-find . -maxdepth 1 -name "yarn.lock" -newer .claude/handoffs/LATEST.md
-find . -maxdepth 1 -name "pnpm-lock.yaml" -newer .claude/handoffs/LATEST.md
+find . -maxdepth 1 -name "package.json" -newer .handoffs/LATEST.md
+find . -maxdepth 1 -name "package-lock.json" -newer .handoffs/LATEST.md
+find . -maxdepth 1 -name "yarn.lock" -newer .handoffs/LATEST.md
+find . -maxdepth 1 -name "pnpm-lock.yaml" -newer .handoffs/LATEST.md
 ```
 If any match, warn that dependencies may have changed and suggest running the install command.
 

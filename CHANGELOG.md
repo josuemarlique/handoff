@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 — 2026-06-29
+
+### Added
+- **Codex plugin support** — added `.codex-plugin/plugin.json` so the plugin can be installed by Codex.
+- **Neutral handoff directory** — `.handoffs/` is now the canonical project-local handoff path for Claude Code and Codex.
+- **Legacy migration** — first use copies `.claude/handoffs/` into `.handoffs/`, leaves the old folder in place as an archive, and tells the user when it is safe to delete it.
+- **Resume status metadata** — resume reports now include mode, context size, and limits when the host exposes them.
+- **Contract tests** — added dependency-free tests covering Codex metadata, path migration, freshness checks, and resume status fields.
+
+### Changed
+- Repository identity is now `josuemarlique/handoff`.
+- Freshness checks include `.handoffs/` alongside legacy `.claude/` and Codex project directories.
+
 ## 1.1.0 — 2026-04-17
 
 ### Added
