@@ -6,3 +6,4 @@ __pycache__/
 # Internal planning artifacts (design specs, implementation plans).
 # Kept local for reference; not part of the public plugin.
 docs/superpowers/
+.gstack/
