@@ -1,6 +1,6 @@
 {
   "name": "handoff",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Session handoff skill for zero-loss continuity across coding agent conversations. Generates structured context-transfer documents at session end, verifies and loads them at session start.",
   "author": {
     "name": "Josue Marlique",
@@ -30,7 +30,8 @@
     ],
     "defaultPrompt": [
       "Create a handoff for this session.",
-      "Resume from the last handoff."
+      "Resume from the last handoff.",
+      "Fix where my handoffs are stored."
     ],
     "websiteURL": "https://github.com/josuemarlique/handoff",
     "brandColor": "#2563EB",
