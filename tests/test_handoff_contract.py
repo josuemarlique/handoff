@@ -458,6 +458,60 @@ class HandoffContractTest(unittest.TestCase):
             )
 
 
+class VersionTest(unittest.TestCase):
+    """The version is hand-written in three files. Claude Code resolves a
+    disagreement by letting plugin.json win at install time and warning that the
+    marketplace entry is wrong, so drift ships a plugin whose advertised version
+    is a lie. Cheap to catch here."""
+
+    MANIFESTS = {
+        ".claude-plugin/plugin.json": ("version",),
+        ".codex-plugin/plugin.json": ("version",),
+        ".claude-plugin/marketplace.json": ("plugins", 0, "version"),
+    }
+
+    def version_from(self, path, keys):
+        data = json.loads(read(path))
+        for key in keys:
+            data = data[key]
+        return data
+
+    def test_all_manifests_declare_the_same_version(self):
+        found = {
+            path: self.version_from(path, keys)
+            for path, keys in self.MANIFESTS.items()
+        }
+        self.assertEqual(
+            len(set(found.values())),
+            1,
+            f"manifest versions disagree: {found}",
+        )
+
+    def test_version_is_semver(self):
+        version = self.version_from(
+            ".claude-plugin/plugin.json", ("version",)
+        )
+        self.assertRegex(version, r"^\d+\.\d+\.\d+$", "version is not X.Y.Z")
+
+    def test_changelog_has_an_entry_for_the_current_version(self):
+        version = self.version_from(".claude-plugin/plugin.json", ("version",))
+        changelog = read("CHANGELOG.md")
+        headings = [
+            line for line in changelog.splitlines() if line.startswith("## ")
+        ]
+        self.assertTrue(
+            any(version in line for line in headings),
+            f"CHANGELOG.md has no entry for {version}. Headings: {headings[:3]}",
+        )
+
+    def test_marketplace_entry_names_the_plugin_it_ships(self):
+        marketplace = json.loads(read(".claude-plugin/marketplace.json"))
+        plugin = json.loads(read(".claude-plugin/plugin.json"))
+        entries = marketplace["plugins"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["name"], plugin["name"])
+
+
 class StorageLayoutTest(unittest.TestCase):
     def test_skill_names_every_wrong_folder_and_forbids_writing_there(self):
         skill = read(SKILL)
