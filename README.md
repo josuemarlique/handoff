@@ -65,6 +65,37 @@ codex plugin add handoff@jmarlique-tools
 
 After changing the plugin locally, reinstall it and start a new thread so the updated skill loads.
 
+### Updating to a newer version
+
+If you already have it installed, **one command**:
+
+```
+/plugin marketplace update jmarlique-tools
+```
+
+That refreshes the marketplace and the plugins installed from it, in the same step. Then:
+
+```
+/reload-plugins
+```
+
+to apply it without restarting, or just start a new chat.
+
+Do **not** run `/plugin install` again. There is no `/plugin update` command, and `install` is for first-time setup only - if the plugin is already there it simply reports "already installed" and changes nothing. That is expected, not an error.
+
+To check which version you actually have, use `/plugin manage`, or look at the file directly:
+
+```bash
+grep -A3 'handoff@jmarlique-tools' ~/.claude/plugins/installed_plugins.json
+```
+
+If the version is still the old one, uninstall and reinstall:
+
+```
+/plugin uninstall handoff
+/plugin install handoff@jmarlique-tools
+```
+
 ---
 
 ## Quick start
