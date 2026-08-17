@@ -1,4 +1,4 @@
-# Sentiment Analysis Reference — Handoff Skill
+# Sentiment Analysis Reference - Handoff Skill
 
 This file defines how Claude detects friction and frustration patterns when scanning conversation history to produce a handoff summary.
 
@@ -25,7 +25,7 @@ Scan the conversation using this process:
 1. Review the conversation chronologically, focusing on user messages and tool output
 2. Look for the specific text patterns from the table above
 3. Also look for behavioral patterns: same file appearing in multiple edit tool calls, same bash command run multiple times, git revert/reset commands
-4. Note the context around each detected signal — what was being worked on, what the goal was
+4. Note the context around each detected signal - what was being worked on, what the goal was
 5. Group related signals into friction point entries (don't create separate entries for "ugh" and "this doesn't work" if they're about the same problem)
 6. Prioritize by severity: High items always included, Medium items if they have solutions, Low items only if they represent significant misunderstandings
 
@@ -37,10 +37,10 @@ Use this format when producing a detailed handoff summary.
 
 ```markdown
 ### [Short description of the friction]
-- **What happened:** [Context — what was being worked on when the friction occurred]
+- **What happened:** [Context - what was being worked on when the friction occurred]
 - **What was tried:** [List of approaches that failed or were abandoned]
-- **What worked:** [The solution that ultimately resolved it, or "Unresolved — [current status]" if still open]
-- **Severity:** High/Medium/Low — [brief justification for the severity level]
+- **What worked:** [The solution that ultimately resolved it, or "Unresolved - [current status]" if still open]
+- **Severity:** High/Medium/Low - [brief justification for the severity level]
 ```
 
 ---
@@ -63,9 +63,9 @@ If unresolved:
 
 ## 5. Key Principles
 
-- **Neutral and solution-oriented** — This is a "don't step on this rake" map, not a judgment. Frame friction points as information for the next session, not criticism.
-- **Include solutions, not just problems** — A friction point without a solution is only half useful. If the problem was resolved, say how. If it wasn't, say what the current state is.
-- **Group related signals** — Don't list every individual "ugh" or retry. Group them into the overarching friction event they belong to.
-- **Prioritize high-severity first** — Order friction points by severity (High then Medium then Low) in the output.
-- **Don't fabricate friction** — Only report friction that actually happened in the conversation. If the session was smooth, the Friction Points section can be empty or say "No significant friction detected."
-- **Context matters more than count** — One high-severity blocker that consumed 30 minutes is more important than five low-severity corrections.
+- **Neutral and solution-oriented** - This is a "don't step on this rake" map, not a judgment. Frame friction points as information for the next session, not criticism.
+- **Include solutions, not just problems** - A friction point without a solution is only half useful. If the problem was resolved, say how. If it wasn't, say what the current state is.
+- **Group related signals** - Don't list every individual "ugh" or retry. Group them into the overarching friction event they belong to.
+- **Prioritize high-severity first** - Order friction points by severity (High then Medium then Low) in the output.
+- **Don't fabricate friction** - Only report friction that actually happened in the conversation. If the session was smooth, the Friction Points section can be empty or say "No significant friction detected."
+- **Context matters more than count** - One high-severity blocker that consumed 30 minutes is more important than five low-severity corrections.

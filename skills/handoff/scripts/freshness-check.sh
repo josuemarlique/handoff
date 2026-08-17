@@ -88,6 +88,29 @@ file_mtime_pretty() {
   fi
 }
 
+# True when the path is a handoff artifact rather than project work.
+# Used to keep the skill's own footprint out of the drift report.
+is_handoff_path() {
+  case "$1" in
+    .handoffs|.handoffs/*) return 0 ;;
+  esac
+  return 1
+}
+
+# True when the path lives in one of the old handoff folders we migrate from.
+# Those are archives by definition, so changes there are never real drift.
+is_archived_handoff_path() {
+  case "$1" in
+    .claude/handoffs|.claude/handoffs/*) return 0 ;;
+    .claude/.handoffs|.claude/.handoffs/*) return 0 ;;
+    .codex/handoffs|.codex/handoffs/*) return 0 ;;
+    .Codex/handoffs|.Codex/handoffs/*) return 0 ;;
+    docs/handoffs|docs/handoffs/*) return 0 ;;
+    handoffs|handoffs/*) return 0 ;;
+  esac
+  return 1
+}
+
 # Create a reference file whose mtime is set to the given timestamp string.
 # Returns the path to the temp file (caller must clean up).
 create_reference_file() {
@@ -146,7 +169,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   IN_GIT="false"
 fi
 
-# Overall freshness — start true, any stale check flips it
+# Overall freshness - start true, any stale check flips it
 OVERALL_FRESH="true"
 
 # ---------------------------------------------------------------------------
@@ -247,13 +270,6 @@ UC_FILES_JSON="["
 if [ "$IN_GIT" = "true" ]; then
   _porcelain=$(git status --porcelain 2>/dev/null || true)
   if [ -n "$_porcelain" ]; then
-    UC_HAS_CHANGES="true"
-    # Mark stale if the handoff said there were no uncommitted changes
-    # but now there are, or vice versa. Any uncommitted changes is potentially
-    # stale context.
-    UC_STALE="true"
-    OVERALL_FRESH="false"
-
     _first="true"
     _ucfile=$(mktemp)
     printf '%s\n' "$_porcelain" > "$_ucfile"
@@ -261,6 +277,17 @@ if [ "$IN_GIT" = "true" ]; then
       [ -z "$_line" ] && continue
       # Strip the leading status chars (first 3 characters)
       _fname=$(printf '%s' "$_line" | sed 's/^...//')
+
+      # The handoff folder is usually untracked. Reporting it as drift on
+      # every resume is noise, not signal.
+      if is_handoff_path "$_fname" || is_archived_handoff_path "$_fname"; then
+        continue
+      fi
+
+      UC_HAS_CHANGES="true"
+      UC_STALE="true"
+      OVERALL_FRESH="false"
+
       _escaped=$(json_escape "$_fname")
       if [ "$_first" = "true" ]; then
         UC_FILES_JSON="${UC_FILES_JSON}\"${_escaped}\""
@@ -286,6 +313,32 @@ UC_JSON=$(printf '{\n      "stale": %s,\n      "has_changes": %s,\n      "files_
 SC_STALE="false"
 SC_FILES_JSON="["
 
+# The handoff run writes its own files a moment after the `created` timestamp,
+# so those files would otherwise always look like drift. Work out the
+# timestamp prefix of this handoff (e.g. 2026-08-16-14-30) and ignore its own
+# siblings plus the LATEST pointer files. A *different* handoff still shows up.
+# Prefer the frontmatter timestamp, because Resume Mode reads LATEST.md whose
+# own name carries no timestamp. Fall back to the file name.
+SELF_PREFIX=$(printf '%s' "$FM_CREATED" \
+  | sed -n 's/^\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\)T\([0-9][0-9]\):\([0-9][0-9]\).*/\1-\2-\3/p')
+if [ -z "$SELF_PREFIX" ]; then
+  SELF_PREFIX=$(basename "$HANDOFF_FILE" \
+    | sed -n 's/^\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\)-.*/\1/p')
+fi
+
+is_self_artifact() {
+  _p=$(basename "$1")
+  case "$_p" in
+    LATEST.md|LATEST-PROMPT.md|LATEST-GOAL.md) return 0 ;;
+  esac
+  if [ -n "$SELF_PREFIX" ]; then
+    case "$_p" in
+      "$SELF_PREFIX"-*) return 0 ;;
+    esac
+  fi
+  return 1
+}
+
 if [ -n "$FM_CREATED" ]; then
   _reffile=$(create_reference_file "$FM_CREATED")
 
@@ -304,13 +357,15 @@ ${_found}"
 
   _first="true"
   if [ -n "$_spec_files" ]; then
-    SC_STALE="true"
-    OVERALL_FRESH="false"
-
     _scfile=$(mktemp)
     printf '%s\n' "$_spec_files" > "$_scfile"
     while IFS= read -r _path; do
       [ -z "$_path" ] && continue
+      if is_self_artifact "$_path" || is_archived_handoff_path "$_path"; then
+        continue
+      fi
+      SC_STALE="true"
+      OVERALL_FRESH="false"
       _mtime=$(file_mtime_pretty "$_path")
       _epath=$(json_escape "$_path")
       _etime=$(json_escape "$_mtime")
