@@ -504,12 +504,31 @@ class VersionTest(unittest.TestCase):
             f"CHANGELOG.md has no entry for {version}. Headings: {headings[:3]}",
         )
 
-    def test_marketplace_entry_names_the_plugin_it_ships(self):
+    def test_marketplace_lists_this_repo_s_own_plugin_first(self):
+        """This repo ships one plugin of its own, but the marketplace also points at
+        plugins that live in other repositories. The local one has to stay at index 0,
+        because the version-drift test above reads its version from there."""
         marketplace = json.loads(read(".claude-plugin/marketplace.json"))
         plugin = json.loads(read(".claude-plugin/plugin.json"))
         entries = marketplace["plugins"]
-        self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["name"], plugin["name"])
+        self.assertEqual(entries[0]["source"], "./")
+
+    def test_remote_marketplace_entries_pin_a_commit(self):
+        """An entry pointing at another repository has to name an exact commit. Without
+        a pin, what installs changes whenever that repository moves, and nothing here
+        would show it."""
+        marketplace = json.loads(read(".claude-plugin/marketplace.json"))
+        for entry in marketplace["plugins"]:
+            source = entry["source"]
+            if isinstance(source, str):
+                continue
+            self.assertIn("url", source, f"{entry['name']}: remote source has no url")
+            self.assertRegex(
+                source.get("sha", ""),
+                r"^[0-9a-f]{40}$",
+                f"{entry['name']}: remote source must pin a full 40-character commit sha",
+            )
 
 
 class StorageLayoutTest(unittest.TestCase):

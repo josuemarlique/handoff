@@ -9,6 +9,23 @@
       "source": "./",
       "description": "Session handoff for zero-loss continuity across coding agent conversations",
       "version": "1.3.0"
+    },
+    {
+      "name": "showme",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/josuemarlique/showme.git",
+        "sha": "e5fae996cc420b577ac65533fe6c4ca06272c154"
+      },
+      "description": "Review agent-generated HTML in a local browser: point at elements, annotate text, and send feedback back to the agent instead of reading a wall of text.",
+      "version": "0.1.63",
+      "category": "productivity",
+      "tags": [
+        "html",
+        "review",
+        "artifacts",
+        "visualization"
+      ]
     }
   ]
 }
