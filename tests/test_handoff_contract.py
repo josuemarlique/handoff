@@ -459,15 +459,16 @@ class HandoffContractTest(unittest.TestCase):
 
 
 class VersionTest(unittest.TestCase):
-    """The version is hand-written in three files. Claude Code resolves a
-    disagreement by letting plugin.json win at install time and warning that the
-    marketplace entry is wrong, so drift ships a plugin whose advertised version
-    is a lie. Cheap to catch here."""
+    """The version is hand-written in both manifests. A disagreement ships a
+    plugin whose advertised version is a lie. Cheap to catch here.
+
+    The marketplace that lists this plugin lives in josuemarlique/claude-plugins,
+    not in this repo. Its own CI fetches the commit it pins here and fails if the
+    version it advertises does not match this plugin.json."""
 
     MANIFESTS = {
         ".claude-plugin/plugin.json": ("version",),
         ".codex-plugin/plugin.json": ("version",),
-        ".claude-plugin/marketplace.json": ("plugins", 0, "version"),
     }
 
     def version_from(self, path, keys):
@@ -503,32 +504,6 @@ class VersionTest(unittest.TestCase):
             any(version in line for line in headings),
             f"CHANGELOG.md has no entry for {version}. Headings: {headings[:3]}",
         )
-
-    def test_marketplace_lists_this_repo_s_own_plugin_first(self):
-        """This repo ships one plugin of its own, but the marketplace also points at
-        plugins that live in other repositories. The local one has to stay at index 0,
-        because the version-drift test above reads its version from there."""
-        marketplace = json.loads(read(".claude-plugin/marketplace.json"))
-        plugin = json.loads(read(".claude-plugin/plugin.json"))
-        entries = marketplace["plugins"]
-        self.assertEqual(entries[0]["name"], plugin["name"])
-        self.assertEqual(entries[0]["source"], "./")
-
-    def test_remote_marketplace_entries_pin_a_commit(self):
-        """An entry pointing at another repository has to name an exact commit. Without
-        a pin, what installs changes whenever that repository moves, and nothing here
-        would show it."""
-        marketplace = json.loads(read(".claude-plugin/marketplace.json"))
-        for entry in marketplace["plugins"]:
-            source = entry["source"]
-            if isinstance(source, str):
-                continue
-            self.assertIn("url", source, f"{entry['name']}: remote source has no url")
-            self.assertRegex(
-                source.get("sha", ""),
-                r"^[0-9a-f]{40}$",
-                f"{entry['name']}: remote source must pin a full 40-character commit sha",
-            )
 
 
 class StorageLayoutTest(unittest.TestCase):

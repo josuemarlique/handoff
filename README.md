@@ -43,7 +43,7 @@ Without a handoff, a new chat spends its first 10 to 15 minutes rediscovering th
 
 ```bash
 # Add the marketplace
-/plugin marketplace add josuemarlique/handoff
+/plugin marketplace add josuemarlique/claude-plugins
 
 # Install the plugin
 /plugin install handoff@jmarlique-tools
@@ -52,7 +52,7 @@ Without a handoff, a new chat spends its first 10 to 15 minutes rediscovering th
 ### Codex
 
 ```bash
-codex plugin marketplace add josuemarlique/handoff
+codex plugin marketplace add josuemarlique/claude-plugins
 codex plugin add handoff@jmarlique-tools
 ```
 
@@ -62,6 +62,9 @@ For local development from a checkout:
 codex plugin marketplace add /path/to/handoff
 codex plugin add handoff@jmarlique-tools
 ```
+
+The marketplace itself lives in [josuemarlique/claude-plugins](https://github.com/josuemarlique/claude-plugins), which lists every plugin.
+This repository, [josuemarlique/handoff](https://github.com/josuemarlique/handoff), holds only the handoff plugin.
 
 After changing the plugin locally, reinstall it and start a new thread so the updated skill loads.
 
