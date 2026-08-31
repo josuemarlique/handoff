@@ -15,7 +15,7 @@
       "source": {
         "source": "url",
         "url": "https://github.com/josuemarlique/showme.git",
-        "sha": "c218a296879e11c56f6bcd51bf1af44e4d94c0ea"
+        "sha": "129f05e018297b8f23ab3c58dc789ebebeedc5dd"
       },
       "description": "Review agent-generated HTML in a local browser: point at elements, annotate text, and send feedback back to the agent instead of reading a wall of text.",
       "version": "0.1.63",
