@@ -311,7 +311,7 @@ Project memory is host-specific:
 
 ## Generated Files
 
-Each Generate Mode invocation produces up to five files.
+Each Generate Mode invocation produces up to six files.
 
 | File | Purpose |
 |------|---------|
