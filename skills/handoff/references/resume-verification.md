@@ -20,7 +20,7 @@ Read the newest file that turns up, and tell the user that `LATEST.md` was missi
 
 If nothing is found at all, display the following and stop:
 
-> No previous handoff found. Use `/handoff` at the end of a session to create one.
+> No previous handoff found. Use the Handoff skill (`/handoff` in Claude Code or `$handoff` in Codex) at the end of a session to create one.
 
 Do not attempt to search parent directories or other projects. Scoping is strict.
 

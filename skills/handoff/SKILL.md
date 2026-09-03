@@ -1,7 +1,7 @@
 ---
 name: handoff
 description: >
-  Generate context-transfer documents for session continuity. Triggers: "/handoff",
+  Generate context-transfer documents for session continuity. Triggers: "$handoff", "/handoff",
   "hand off", "create a handoff", "prepare handoff", "session handoff", "wrap up session",
   "continue from last handoff", "resume from handoff", "pick up where we left off".
   Produces a structured handoff document, a short goal file sized for /goal, and a
@@ -296,6 +296,8 @@ Incorporate answers into the "User Notes" section of the handoff and let them in
 ## Host Compatibility
 
 This skill is usable from Claude Code and Codex. Project handoff artifacts always live in `.handoffs/` for cross-agent continuity, as described in Storage Rules.
+
+Invocation syntax is host-specific: Claude Code uses `/handoff`; Codex uses `$handoff`. Flags and bare-word aliases work the same way after either name. Canonical generated templates name both forms explicitly so the next session cannot inherit a command for the wrong host. In conversational instructions where the current host is known, use that host's form and keep the arguments unchanged.
 
 Project memory is host-specific:
 

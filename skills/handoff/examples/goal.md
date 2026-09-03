@@ -1,7 +1,7 @@
 # Session Goal - ModernPageBuilder
 
 **Full context:** read `.handoffs/LATEST.md` before you start working.
-**Verify first:** run `/handoff --resume` to check this against the current project state.
+**Verify first:** run the Handoff skill in resume mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) to check this against the current project state.
 
 ## How to write back to me
 

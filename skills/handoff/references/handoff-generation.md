@@ -207,7 +207,8 @@ How to work: use agent teams for independent pieces of work and run them in para
 Let teammates message each other when their work overlaps. Keep this main chat for
 decisions and review so its context stays small.
 
-First, read .handoffs/LATEST.md for full context, then run /handoff --resume to verify
+First, read .handoffs/LATEST.md for full context, then run the Handoff skill in resume
+mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) to verify
 freshness before proceeding.
 
 Key context:
@@ -226,7 +227,8 @@ see the handoff document.
 ### Compact mode
 
 ```
-Continue from .handoffs/LATEST.md - run /handoff --resume first.
+Continue from .handoffs/LATEST.md - run the Handoff skill in resume mode first
+(`/handoff --resume` in Claude Code or `$handoff --resume` in Codex).
 Write plain, middle-school level, spell out short forms, TL;DR first and last.
 Use agent teams for parallel work; keep this chat small.
 Project: [name] | Branch: [branch] | Phase: [phase]

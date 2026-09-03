@@ -46,7 +46,7 @@ Emit this block verbatim as the **first** section of the handoff body, immediate
 
 **Before you start working**
 
-1. Run `/handoff --resume` to check this handoff against the current state of the project.
+1. Run the Handoff skill in resume mode: `/handoff --resume` in Claude Code, or `$handoff --resume` in Codex.
 2. Tell me what drifted, if anything.
 3. Confirm the first priority with me before you begin.
 ```
@@ -132,7 +132,7 @@ The file does **not** get longer in `--long` mode and does **not** get shorter i
 # Session Goal - [project name]
 
 **Full context:** read `.handoffs/LATEST.md` before you start working.
-**Verify first:** run `/handoff --resume` to check this against the current project state.
+**Verify first:** run the Handoff skill in resume mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) to check this against the current project state.
 
 ## How to write back to me
 
@@ -214,7 +214,7 @@ After all files are written, the last thing shown to the user is the copy-paste 
 **1. Start here** - this loads the context:
 
 ```
-Read .handoffs/LATEST-GOAL.md and then .handoffs/LATEST.md, then run /handoff --resume and tell me what drifted. Follow the writing and working rules in those files for the whole session.
+Read .handoffs/LATEST-GOAL.md and then .handoffs/LATEST.md, then run the Handoff skill in resume mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) and tell me what drifted. Follow the writing and working rules in those files for the whole session.
 ```
 
 **2. Optional - set the finish line** so the session keeps working until the job is done:
@@ -233,7 +233,7 @@ Check it any time with `/goal`. Turn it off with `/goal clear`.
 - Point at `LATEST-GOAL.md` and `LATEST.md`, never at the timestamped files. The `LATEST*` paths stay correct as new handoffs are written.
 - **Line 2 is optional and is presented that way.** A goal that does not fit the session is worse than no goal, because it makes Claude refuse to stop.
 - Copy the `/goal` condition from the goal file's `## Finish line` section verbatim. Do not rewrite it here - one source, no drift.
-- If `--no-goal` was passed, drop both the goal file reference and line 2. Line 1 becomes: "Read `.handoffs/LATEST.md`, then run `/handoff --resume` and tell me what drifted." Add a one-line note that no goal file was written this run.
+- If `--no-goal` was passed, drop both the goal file reference and line 2. Line 1 becomes: "Read `.handoffs/LATEST.md`, then run the Handoff skill in resume mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) and tell me what drifted." Add a one-line note that no goal file was written this run.
 - Add this note under the block whenever line 2 is present:
 
   > `/goal` is a Claude Code feature and needs a trusted workspace. If it is not available, skip step 2 - step 1 is the part that matters.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 - 2026-09-03
+
+### Changed
+- Generated resume instructions now label both Claude Code's `/handoff` form and Codex's `$handoff` form while preserving every existing mode, flag, and workflow.
+- Codex install and update instructions now use the shared `jmarlique-tools` marketplace and its supported lifecycle commands.
+
+### Fixed
+- Local Codex setup no longer points at the Handoff plugin repository as though it were a marketplace.
+
 ## 1.3.0 - 2026-08-16
 
 ### Added
