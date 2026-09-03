@@ -6,12 +6,14 @@ Session handoff for coding agents. End a session, pick it back up later, lose no
 
 ## TL;DR
 
-- **What it is:** a skill for Claude Code and Codex. Type `/handoff` when you are out of context or done for the day, and it writes down everything the next chat needs.
+- **What it is:** a skill for Claude Code and Codex. Run `/handoff` in Claude Code or `$handoff` in Codex when you are out of context or done for the day, and it writes down everything the next chat needs.
 - **What you get:** a full handoff document, a short goal file, and a one-line kickoff message to paste into your next chat.
 - **Where files go:** `.handoffs/` in your project, sorted into day folders like `.handoffs/2026-08-16/`.
-- **Next session:** paste the kickoff line, then run `/handoff --resume`. It checks the handoff against your real git state and tells you what moved.
+- **Next session:** paste the kickoff line, then run `/handoff --resume` in Claude Code or `$handoff --resume` in Codex. It checks the handoff against your real git state and tells you what moved.
 - **Every handoff starts with rules** for the next chat: write in plain language, lead with a `TL;DR`, and split independent work across an agent team so the main chat stays small.
-- **Three sizes:** `/handoff compact`, `/handoff` (normal), `/handoff long`.
+- **Three sizes:** compact, normal, and long.
+
+> **Command syntax:** Claude Code invokes the skill as `/handoff`; Codex invokes it as `$handoff`. The options and bare-word aliases are identical. Examples later in this README use Claude Code's slash form unless both forms are shown.
 
 ---
 
@@ -56,12 +58,14 @@ codex plugin marketplace add josuemarlique/claude-plugins
 codex plugin add handoff@jmarlique-tools
 ```
 
-For local development from a checkout:
+To test a local checkout of the catalog itself, add the marketplace repository, not this individual plugin repository:
 
 ```bash
-codex plugin marketplace add /path/to/handoff
+codex plugin marketplace add /path/to/claude-plugins
 codex plugin add handoff@jmarlique-tools
 ```
+
+The marketplace checkout must contain `.agents/plugins/marketplace.json`, which tells Codex where to fetch Handoff. Pointing `codex plugin marketplace add` at `/path/to/handoff` does not work because this repository is a plugin, not a marketplace.
 
 The marketplace itself lives in [josuemarlique/claude-plugins](https://github.com/josuemarlique/claude-plugins), which lists every plugin.
 This repository, [josuemarlique/handoff](https://github.com/josuemarlique/handoff), holds only the handoff plugin.
@@ -69,6 +73,8 @@ This repository, [josuemarlique/handoff](https://github.com/josuemarlique/handof
 After changing the plugin locally, reinstall it and start a new thread so the updated skill loads.
 
 ### Updating to a newer version
+
+#### Claude Code
 
 If you already have it installed, **one command**:
 
@@ -99,27 +105,33 @@ If the version is still the old one, uninstall and reinstall:
 /plugin install handoff@jmarlique-tools
 ```
 
+#### Codex
+
+Refresh the Git marketplace snapshot, then reinstall Handoff from it:
+
+```bash
+codex plugin marketplace upgrade jmarlique-tools
+codex plugin add handoff@jmarlique-tools
+```
+
+Start a new Codex thread after reinstalling so the updated skill is loaded. Check the installed entry with `codex plugin list`. If it still resolves to stale content, remove and add it again:
+
+```bash
+codex plugin remove handoff@jmarlique-tools
+codex plugin add handoff@jmarlique-tools
+```
+
 ---
 
 ## Quick start
 
-**End of a session:**
+| Task | Claude Code | Codex |
+| --- | --- | --- |
+| End a session | `/handoff` | `$handoff` |
+| Generate the detailed version | `/handoff long` | `$handoff long` |
+| Resume in the next session | `/handoff --resume` | `$handoff --resume` |
 
-```
-/handoff
-```
-
-**Need the detailed version:**
-
-```
-/handoff long
-```
-
-**Start of the next session** - paste the kickoff line the skill printed, then:
-
-```
-/handoff --resume
-```
+At the start of the next session, paste the kickoff line the skill printed before invoking resume.
 
 You can also just say "continue from last handoff" or "pick up where we left off".
 
@@ -226,7 +238,7 @@ Every handoff opens with the same two blocks, in every size, so the next chat st
 - Spell out short forms the first time, like "continuous integration (CI)".
 - Start every reply with a short `TL;DR` and end with a one-line `TL;DR`.
 - Use an agent team for independent pieces of work and run them at the same time. In Claude Code, saying **"fan out subagents"** is a reliable way to start one. Keep the main chat for decisions and review so its context stays small.
-- Run `/handoff --resume` before doing anything else.
+- Run the Handoff skill in resume mode: `/handoff --resume` in Claude Code or `$handoff --resume` in Codex.
 
 That last rule is the one that buys you time. Each teammate gets its own context window, and only its short report comes back, so the main chat fills up far more slowly. The "What's Next" section marks which items are independent, so the next session knows what it can safely split.
 
@@ -281,7 +293,7 @@ At the end of every run the skill prints a kickoff block that looks like this:
 > **1. Start here** - this loads the context:
 >
 > ```
-> Read .handoffs/LATEST-GOAL.md and then .handoffs/LATEST.md, then run /handoff --resume and tell me what drifted. Follow the writing and working rules in those files for the whole session.
+> Read .handoffs/LATEST-GOAL.md and then .handoffs/LATEST.md, then run the Handoff skill in resume mode (`/handoff --resume` in Claude Code or `$handoff --resume` in Codex) and tell me what drifted. Follow the writing and working rules in those files for the whole session.
 > ```
 >
 > **2. Optional - set the finish line:**

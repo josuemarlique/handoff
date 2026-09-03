@@ -35,7 +35,7 @@ redactions_applied: 1
 
 **Before you start working**
 
-1. Run `/handoff --resume` to check this handoff against the current state of the project.
+1. Run the Handoff skill in resume mode: `/handoff --resume` in Claude Code, or `$handoff --resume` in Codex.
 2. Tell me what drifted, if anything.
 3. Confirm the first priority with me before you begin.
 

@@ -67,6 +67,63 @@ def fenced_block_containing(text: str, needle: str) -> str:
 
 
 class HandoffContractTest(unittest.TestCase):
+    def test_codex_manifest_exposes_the_shared_skill(self):
+        manifest = json.loads(read(".codex-plugin/plugin.json"))
+        self.assertEqual(manifest["name"], "handoff")
+        self.assertEqual(manifest["skills"], "./skills/")
+
+    def test_docs_distinguish_claude_and_codex_invocation_syntax(self):
+        readme = read("README.md")
+        skill = read(SKILL)
+        frontmatter = skill.split("---", 2)[1]
+        compatibility = section(skill, "## Host Compatibility")
+
+        for text in (readme, skill):
+            self.assertIn("`/handoff`", text)
+            self.assertIn("`$handoff`", text)
+
+        # These must be real discovery triggers, not examples that only appear
+        # later in the prose.
+        self.assertIn('"/handoff"', frontmatter)
+        self.assertIn('"$handoff"', frontmatter)
+
+        # Flags and aliases remain portable, and canonical generated templates
+        # name both hosts so a future session cannot receive the wrong prefix.
+        self.assertIn("Claude Code uses `/handoff`", compatibility)
+        self.assertIn("Codex uses `$handoff`", compatibility)
+        self.assertIn("keep the arguments unchanged", compatibility)
+        self.assertIn("name both forms explicitly", compatibility)
+
+        generated_templates = [
+            read(GENERATION),
+            read(RESUME),
+            read(CONTRACT),
+            *(read(path) for path in HANDOFF_EXAMPLES),
+            read("skills/handoff/examples/goal.md"),
+        ]
+        for template in generated_templates:
+            self.assertIn("`/handoff", template)
+            self.assertIn("`$handoff", template)
+
+        self.assertNotIn(
+            "codex plugin marketplace add /path/to/handoff", readme
+        )
+        self.assertIn(
+            "codex plugin marketplace add /path/to/claude-plugins", readme
+        )
+        for command in (
+            "codex plugin marketplace upgrade jmarlique-tools",
+            "codex plugin list",
+            "codex plugin remove handoff@jmarlique-tools",
+            "codex plugin add handoff@jmarlique-tools",
+        ):
+            self.assertIn(command, readme)
+
+        for heading in ("## What is in a handoff", "## The goal file and `/goal`"):
+            readme_section = section(readme, heading)
+            self.assertIn("`/handoff --resume` in Claude Code", readme_section)
+            self.assertIn("`$handoff --resume` in Codex", readme_section)
+
     def test_repo_urls_use_neutral_handoff_name(self):
         checked_paths = [
             "README.md",
@@ -568,7 +625,8 @@ class NextSessionContractTest(unittest.TestCase):
         self.assertIn("subagents", block)
         self.assertIn("fan out subagents", block)
         self.assertIn("message each other", block)
-        self.assertIn("/handoff --resume", block)
+        self.assertIn("`/handoff --resume` in Claude Code", block)
+        self.assertIn("`$handoff --resume` in Codex", block)
 
     def test_start_here_block_is_identical_in_every_example(self):
         # The canonical copy lives fenced inside the contract.
